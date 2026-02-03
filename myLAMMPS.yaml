@@ -1,0 +1,3 @@
+Input_Path: "/lustre/isaac/scratch/tliang7/MLIPs/FeHHe/Evaluations/INPUTs"
+Work_Path: "/lustre/isaac/scratch/tliang7/MLIPs/FeHHe/Evaluations"
+VENV: "/lustre/isaac/scratch/tliang7/myVenvs/myvenv"

@@ -1,0 +1,21 @@
+units         metal
+dimension     3
+atom_style    atomic
+atom_modify   map array
+boundary      p  p  p
+
+pair_style    mlip mlip.ini
+read_data     in.dat 
+pair_coeff    *  * 
+
+neighbor 2.0 bin
+neigh_modify every 1 delay 0 check yes
+
+timestep     0.001
+
+thermo_style custom step temp pe ke etotal press
+thermo 1000
+
+minimize     0.0 1.0e-6 200000   2000000
+
+write_data   out.dat

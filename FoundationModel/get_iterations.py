@@ -22,8 +22,8 @@ app_scale = 0.9736915063591047
 a1_ref = a2_ref * app_scale
 a_refs = [a1_ref, a2_ref]
 #a_refs = [a1_ref]
-idsps = [3]  ## for Gao's 1V1He 
-foldhead = "3"
+idsps = [11]  ## for Gao's 1V1He
+foldhead = "11"
 
 '''
 idsps = [6] ## for M07's dumbbell011
@@ -357,7 +357,7 @@ for ipot in range(len(Pots)):
 
                 fout = label + "_" + foldhead + "/"
                 fout += pdt + "_ISPIN" + str(ispin) + "_" + str(isp) + ".dat"
-                outdata.to_file(fout)
+                indata.to_file(fout)
 
             print(f"finished: ispin:{ispin} ")
         print(f"finished: pd:{pdt} ")

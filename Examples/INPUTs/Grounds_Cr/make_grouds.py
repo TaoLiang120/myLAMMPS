@@ -19,3 +19,6 @@ outdata.assert_force_field(force_field)
 #outdata.scale_data(a, style=0)
 outdata.to_file(outdata.full_formula + ".dat")
 
+
+
+

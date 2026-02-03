@@ -1,0 +1,51 @@
+variable      xmin  equal 0.0
+variable      xmax  equal 132.8866
+variable      ymin  equal 0.0
+variable      ymax  equal 231.50
+variable      zmin  equal 0.0
+variable      zmax  equal 252.09
+
+variable      xfix equal 0.0
+variable      yfix equal 30.0
+variable      zfix equal 60.0
+
+variable      ry1   equal ${ymin}+${yfix}
+variable      ry2   equal ${ymax}-${yfix}
+variable      rx1   equal ${xmin}+${xfix}
+variable      rx2   equal ${xmax}-${xfix}
+variable      rz1   equal ${zmin}+${zfix}
+variable      rz2   equal ${zmax}-${zfix}
+
+units         metal
+dimension     3
+atom_style    atomic
+atom_modify   map array
+boundary      p  p  p
+
+pair_style    mlip mlip.ini
+read_data     in.dat 
+pair_coeff    *  * 
+
+neighbor 2.0 bin
+neigh_modify every 1 delay 0 check yes
+
+region       rfix1 block INF INF INF INF INF ${rz1}
+region       rfix2 block INF INF INF INF ${rz2} INF
+region       rfix3 block INF INF INF ${ry1} INF INF
+region       rfix4 block INF INF ${ry2} INF INF INF
+group        gfix1 region rfix1
+group        gfix2 region rfix2
+group        gfix3 region rfix3
+group        gfix4 region rfix4
+group        gfix union gfix1 gfix2 gfix3 gfix4
+group        gactive subtract all gfix
+
+timestep     0.001
+
+thermo_style custom step temp pe ke etotal press
+thermo 1000
+
+fix  ffix gfix setforce 0.0 0.0 0.0
+minimize     0.0 1.0e-6 200000   2000000
+
+write_data   out.dat
