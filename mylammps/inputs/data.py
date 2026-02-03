@@ -840,8 +840,8 @@ class lmpData(LammpsData, MSONable):
                                                       style=style, delete=False, sort=True)
         return inds[0], xyzs[0], ds[0], types[0]
 
-    def center_atoms(self):
-        frac_cen, cen = self.find_center(zero_coords=True)
+    def center_atoms(self, thres=[0.1, 0.1, 0.1]):
+        frac_cen, cen = self.find_center(zero_coords=True, thres=thres)
         self.atoms['xsn'] += 0.5 - frac_cen[0]
         self.atoms['ysn'] += 0.5 - frac_cen[1]
         self.atoms['zsn'] += 0.5 - frac_cen[2]
@@ -866,7 +866,8 @@ class lmpData(LammpsData, MSONable):
 
     def modify_atoms(self, translation=None, rotation=None, inds=None, is_cartesian=True,
                      center_coords=False, normalization4symmop=False, normalization=True, types=None,
-                     Ang_Format="DEGREE", Ang_Style="EU", ff_elements=myElements, atomic_masses=None):
+                     Ang_Format="DEGREE", Ang_Style="EU", ff_elements=myElements, atomic_masses=None,
+                     thres=[0.1, 0.1, 0.1]):
 
         ind_org = np.arange(self.natoms, dtype=int)
         ind_del = np.array([], dtype=int)
@@ -923,7 +924,7 @@ class lmpData(LammpsData, MSONable):
             self.atoms = thisatoms.copy(deep=True)
 
         if center_coords:
-            self.center_atoms()
+            self.center_atoms(thres=thres)
 
         if reinit:
             self.initialization(normalization=normalization, style=1)
@@ -1105,8 +1106,8 @@ class lmpData(LammpsData, MSONable):
         self.atoms['type'] = types
         self.get_data_info()
 
-    def get_interface_scan(self, nx, ny, xrange, yrange):
-        frac_center, center = self.find_center(zero_coords=True, thres=[0.1, 0.1, 0.1])
+    def get_interface_scan(self, nx, ny, xrange, yrange, thres=[0.1, 0.1, 0.1]):
+        frac_center, center = self.find_center(zero_coords=True, thres=thres)
         list_data = []
         list_inddict = []
         for ix in range(nx):
@@ -1151,10 +1152,10 @@ class lmpData(LammpsData, MSONable):
 
     def create_edge_dislocation(self, burgerm, edge_style=0, nedges=1, fy_start=None, fz_start=0.5,
                                 add_vacuum=False, direction=2, lvac=20.0,
-                                reset_ids=True):
-        self.zero_coords()
+                                reset_ids=True, thres=[0.1, 0.1, 0.1]):
+        self.zero_coords(thres=thres)
         buffer = burgerm * 0.03
-        fthres = np.dot(np.array([-0.1, -0.1, -0.1]), self.box.inv_matrix)
+        fthres = np.dot(np.array(thres), self.box.inv_matrix)
         fyshift_lower = [0.0, burgerm / 2.0 + buffer, 0.0]
         fyshift_lower = np.dot(np.array(fyshift_lower), self.box.inv_matrix)
         yshift_upper = [0.0, burgerm / 2.0 - buffer, 0.0]
@@ -1165,20 +1166,20 @@ class lmpData(LammpsData, MSONable):
             else:
                 fy_start = [0.5]
             if fz_start == 0.0:
-                zmin = [0.0 + fthres[2]]
-                zmax = [0.5 + fthres[2]]
+                zmin = [0.0 - fthres[2]]
+                zmax = [0.5 - fthres[2]]
             else:
-                zmin = [0.5 + fthres[2]]
+                zmin = [0.5 - fthres[2]]
                 zmax = [1.0]
         else:
             if isinstance(fy_start, float):
                 fy_start = [fy_start, fy_start + 0.5]
             else:
                 fy_start = [0.25, 0.75]
-            zmin = [0.5 + fthres[2], 0 + fthres[2]]
-            zmax = [1.0, 0.5 + fthres[2]]
+            zmin = [0.5 - fthres[2], 0 - fthres[2]]
+            zmax = [1.0, 0.5 - fthres[2]]
         for i in range(nedges):
-            xlim = [fthres[0], 1.0]
+            xlim = [-fthres[0], 1.0]
             ylim = [fy_start[i] - fyshift_lower[1], fy_start[i] + fyshift_upper[1]]
             zlim = [zmin[i], zmax[i]]
             selected_inds = self.select_by_coords(xlim=xlim, ylim=ylim, zlim=zlim,
@@ -1208,7 +1209,7 @@ class lmpData(LammpsData, MSONable):
             self.reset_atom_ids()
 
     def create_screw_dislocation(self, burgerm, nscrews, style="bcc", handle_pbc="tilt", orientation=True,
-                                 add_vacuum=False, direction=0, lvac=20.0):
+                                 add_vacuum=False, direction=0, lvac=20.0, thres=[0.1, 0.1, 0.1]):
         """
         for bcc
         a = [1, -1, 0]
@@ -1222,7 +1223,7 @@ class lmpData(LammpsData, MSONable):
         buffer = burgerm * 0.03
         if not isinstance(direction, int):
             direction = 0
-        self.zero_coords()
+        self.zero_coords(thres=thres)
         glide_types_bcc = [1, 0, 3, 2]
         glide_types_fcc = [0, 1, 2, 3]
         theta = - np.pi / 3
@@ -1403,7 +1404,7 @@ class lmpData(LammpsData, MSONable):
 
     def append_data(self, indata, direction=2, box_handle="unchanged", add_vacuum=False, lvac=20.0,
                     typesoffset=False, ff_elements=["Fe", "Fe"], atomic_masses=[55.845, 55.845],
-                    reset_ids=True):
+                    reset_ids=True, thres=[0.1, 0.1, 0.1]):
         """
         box_handle means how to deal with the rest two lattice vectors: "mean" is average. Otherwise, uses self
         """
@@ -1436,7 +1437,7 @@ class lmpData(LammpsData, MSONable):
         outdata.box = newbox
         outdata.initialization()
         if add_vacuum:
-            outdata.add_vacuum(lvac=lvac, direction=direction, zero_coords=True, thres=[0.1, 0.1, 0.1])
+            outdata.add_vacuum(lvac=lvac, direction=direction, zero_coords=True, thres=thres)
         if reset_ids:
             outdata.reset_atom_ids()
         return outdata
@@ -1446,7 +1447,7 @@ class lmpData(LammpsData, MSONable):
                    modify_box=False, newmatrix=None, style=0,
                    add_vacuum=False, lvac=20.0, direction=2,
                    typesoffset=False, ff_elements=["Fe", "Fe"], atomic_masses=[55.845, 55.845],
-                   reset_ids=True):
+                   reset_ids=True, thres=[0.1, 0.1, 0.1]):
         outdata = self.deepcopy()
 
         if typesoffset:
@@ -1486,7 +1487,7 @@ class lmpData(LammpsData, MSONable):
                     print("--------")
 
         if add_vacuum:
-            outdata.add_vacuum(lvac=lvac, direction=direction, zero_coords=True, thres=[0.1, 0.1, 0.1])
+            outdata.add_vacuum(lvac=lvac, direction=direction, zero_coords=True, thres=thres)
 
         if reset_ids:
             outdata.reset_atom_ids()
@@ -1499,7 +1500,7 @@ class lmpData(LammpsData, MSONable):
                                modify_box=False, newmatrix=None, style=0,
                                add_vacuum=False, lvac=20.0, direction=2,
                                typesoffset=False, ff_elements=["Fe", "Fe"], atomic_masses=[55.845, 55.845],
-                               reset_ids=True):
+                               reset_ids=True, thres=[0.1, 0.1, 0.1]):
         """
         :param indata: data to be inserted
         :param bondlength: bondlength
@@ -1596,7 +1597,7 @@ class lmpData(LammpsData, MSONable):
             outdata.modify_lmpbox(newmatrix, style=style)
 
         if add_vacuum:
-            outdata.add_vacuum(lvac=lvac, direction=direction, zero_coords=True, thres=[0.1, 0.1, 0.1])
+            outdata.add_vacuum(lvac=lvac, direction=direction, zero_coords=True, thres=thres)
 
         if reset_ids:
             outdata.reset_atom_ids()
