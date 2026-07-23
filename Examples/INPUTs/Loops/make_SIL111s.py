@@ -20,9 +20,9 @@ fname = "bcc112_111_110.data"
 basedata = lmpData.from_file(fname, atom_style)
 basedata.scale_data(a, style=0)
 
-i = 10
-j = 18
-k = 30
+i = 20
+j = 36
+k = 60
 supercell = [i, j, k]
 thisdata=basedata.make_supercell(supercell)
 thisdata.to_file("Sub111.dat")
@@ -73,7 +73,8 @@ direction = 2
 depresss = [1, 1] 
 typesoffset = False
 check_distance=True
-rs = [1.236*a]
+mergy_style = 0
+rs = [10*a]
 
 if typesoffset:
     ff_elements = ["Fe", "Fe"]
@@ -100,6 +101,7 @@ for irad in range(len(rs)):
         tmpdata.select_by_radius(r, center=laycen, is_cartesian=True, depress=depresss[icen], delete=True, style=1)
         tmpdata.atoms = lmpData.modify_by_symmetry(tmpdata.atoms, symmop, normalization=True)
         outdata = outdata.merge_data_with_splits(tmpdata, bondlength,
+                                                 mergy_style=mergy_style,
                                   to_center=center,  is_cartesian=False,
                                   splits=splitss[icen], rcut=0.2*a, tolerance=0.1*a,
                                   modify_box=False, newmatrix=None, style=0,

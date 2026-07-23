@@ -1,6 +1,7 @@
 import os,sys
 import shutil
 import copy
+import numpy as np
 
 from mylammps.inputs.data import lmpBox, lmpData
 
