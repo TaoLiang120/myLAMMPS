@@ -105,7 +105,7 @@ def Fe2Crs_from_a_file(fname, Cr_concs=Cr_Concs,  foutheader=None, atom_style="a
         c = Cr_concs[i]
         outdata = Fe2Cr(outdata, c)
         outfname = foutheader + "_" + str(int(c*100)) + "Cr.dat"
-        outdata.to_file(outfname + ".dat")
+        outdata.to_file(outfname )
         outfnames.append(outfname)
     print(f"-- finished fname:{fname}!")
     return outfnames
@@ -209,7 +209,7 @@ def create_HenVm(outdata, data_int, nHe, mV, inds_vac, inds_int, to_typeid=2):
     return outdata
 
 def create_HenVms_from_basis(supercell, fbasis, nHes, mVs, fbasis_int="tetra_bcc.data", a0=2.83048847,
-                             center=[0.5, 0.5, 0.5], is_cartesian=False, style=0):
+                             center=[0.5, 0.5, 0.5], is_cartesian=False, style=0, refdata=None):
     '''
 
     :param supercell:
@@ -221,7 +221,8 @@ def create_HenVms_from_basis(supercell, fbasis, nHes, mVs, fbasis_int="tetra_bcc
     :param center:
     :return:
     '''
-    refdata = make_supercell_from_basis(fbasis, supercell, a0=a0, out_atom_style="atomic")
+    if refdata is None:
+        refdata = make_supercell_from_basis(fbasis, supercell, a0=a0, out_atom_style="atomic")
     data_int = make_supercell_from_basis(fbasis_int, supercell, a0=a0, out_atom_style="atomic")
 
     tol = 0.1 * a0
@@ -256,7 +257,7 @@ def create_HenVms_from_basis(supercell, fbasis, nHes, mVs, fbasis_int="tetra_bcc
 
 def create_dislocation_loop_basis(supercell, supercell4layer, radius, center=[0.5, 0.5, 0.5], a0=2.83048847,
                                   fbasisid=0, flayerid=0, mergy_style=0, loop_shape="circle",
-                                  splits=[0.0, -0.25, -0.25], lengths=None):
+                                  splits=[0.0, -0.25, -0.25], lengths=None, subdata=None,):
     '''
     layms = [
         np.array([[1, 1, 1], [1, -1, 0], [1, 1, -2]]),
@@ -288,8 +289,8 @@ def create_dislocation_loop_basis(supercell, supercell4layer, radius, center=[0.
         layerm = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
         burgerm = a0
         bondlength = a0 * np.sqrt(3) / 2
-
-    outdata = make_supercell_from_basis(fbasis, supercell, a0=a0, out_atom_style="atomic")
+    if subdata is None:
+         subdata = make_supercell_from_basis(fbasis, supercell, a0=a0, out_atom_style="atomic")
     layerdata = make_supercell_from_basis(flayer, supercell4layer, a0=a0, out_atom_style="atomic")
 
 
@@ -319,7 +320,7 @@ def create_dislocation_loop_basis(supercell, supercell4layer, radius, center=[0.
 
     layerdata.atoms = lmpData.modify_by_symmetry(layerdata.atoms, symmop, normalization=True)
     layerdata.to_file("layer.dat")
-    outdata = outdata.merge_data_with_splits(layerdata, bondlength,
+    outdata = subdata.merge_data_with_splits(layerdata, bondlength,
                                              mergy_style=mergy_style,
                                              to_center=center, is_cartesian=False,
                                              splits=splits, rcut=rcut, tolerance=tolerance,
