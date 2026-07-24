@@ -1662,8 +1662,8 @@ class lmpData(LammpsData, MSONable):
                     indata.atoms.iloc[i, incols.index("y")] = coords[1]
                     indata.atoms.iloc[i, incols.index("z")] = coords[2]
                     outdata.atoms.iloc[ind, outcols.index("x")] = xyzs[0][0]
-                    outdata.atoms.iloc[ind, outcols.index("x")] = xyzs[0][1]
-                    outdata.atoms.iloc[ind, outcols.index("x")] = xyzs[0][2]
+                    outdata.atoms.iloc[ind, outcols.index("y")] = xyzs[0][1]
+                    outdata.atoms.iloc[ind, outcols.index("z")] = xyzs[0][2]
                     selected_inds.append(ind)
 
         if mergy_style == 0:
