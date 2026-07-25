@@ -289,10 +289,8 @@ def create_HenVms_from_basis(supercell, fbasis, nHes, mVs, fbasis_int="tetra_bcc
     return outfiles
 
 def create_dislocation_loop_basis(supercell, supercell4layer, radius, center=[0.5, 0.5, 0.5], a0=2.83048847,
-                                  fbasis=None, fbasisid=0,
-                                  flayer=None, flayerid=0,
-                                  mergy_style=0, loop_shape="circle",
-                                  splits=[0.0, -0.6, -0.6], lengths=None, subdata=None,):
+                                  fbasis=None, fbasisid=0, flayerid=0, mergy_style=0, loop_shape="circle",
+                                  splits=[0.0, -0.25, -0.25], lengths=None, subdata=None,):
     '''
     layms = [
         np.array([[1, 1, 1], [1, -1, 0], [1, 1, -2]]),
@@ -302,9 +300,6 @@ def create_dislocation_loop_basis(supercell, supercell4layer, radius, center=[0.
 
     centers = [[0.5, 0.5, 0.25], [0.5, 0.5, 0.75]]
     splitss = [[-0.15, -0.1, -0.3], [0, -0.23, -0.23]] wrt a0
-
-    100 in 100 splits [-0.25, -0.5, 0.0]
-    111 in 111 splits [0.0, -0.25, -0.25]
 
     note that the second SIL has the identical orientation with substrate.
     this second splits on the second SIL, visually has 111/2 but has higher energy
@@ -319,14 +314,12 @@ def create_dislocation_loop_basis(supercell, supercell4layer, radius, center=[0.
             fbasis = "bcc.data"
         subm = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
     if flayerid == 0:
-        if flayer is None:
-            flayer = "bcc112_111_110.data"
+        flayer = "bcc112_111_110.data"
         burgerm = a0 * np.sqrt(3) / 2
         bondlength = a0 * np.sqrt(3) / 2
         layerm = np.array([[1, 1, -2], [1, 1, 1], [1, -1, 0]])
     else:
-        if flayer is None:
-            flayer= "bcc.data"
+        flayer= "bcc.data"
         layerm = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
         burgerm = a0
         bondlength = a0 * np.sqrt(3) / 2

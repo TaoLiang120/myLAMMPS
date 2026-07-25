@@ -4,7 +4,7 @@ atom_style    atomic
 atom_modify   map array
 boundary      p  p  p
 
-read_data     in.dat
+read_data     I100_s30_Fe.dat
 pair_style    hybrid/overlay eam/fs eam/fs
 pair_coeff    * * eam/fs 1 FeHe-D.eam.fs Fe He
 pair_coeff    * * eam/fs 2 FeHe-S.eam.fs Fe He
@@ -17,13 +17,13 @@ timestep     0.0005
 thermo_style custom step temp pe ke etotal press
 thermo 10
 
-#minimize     0.0 1.0e-3 200000   2000000
+minimize     0.0 1.0e-3 200   2000
 
-velocity     all create 1000.0 10 dist uniform
-fix          1nvt all nvt temp 600.0  600.0  $(100.0*dt)
-run          2000
-unfix        1nvt
-minimize     0.0 1.0e-6 200000   2000000
+#velocity     all create 1000.0 10 dist uniform
+#fix          1nvt all nvt temp 600.0  600.0  $(100.0*dt)
+#run          2000
+#unfix        1nvt
+#minimize     0.0 1.0e-6 200000   2000000
 
 run          0
 print        etotal=$(pe+ke)
