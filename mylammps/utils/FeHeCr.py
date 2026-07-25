@@ -212,7 +212,7 @@ def create_HenVm(outdata, data_int, nHe, mV, inds_vac, inds_int, to_typeid=2):
     return outdata
 
 def create_HenVms_from_basis(supercell, fbasis, nHes, mVs, fbasis_int="tetra_bcc.data", a0=2.83048847,
-                             center=[0.5, 0.5, 0.5], is_cartesian=False, style=0, refdata=None):
+                             center=[0.5, 0.5, 0.5], is_cartesian=False, style=0, refdata=None, outfheader="Fe"):
     '''
 
     :param supercell:
@@ -229,7 +229,7 @@ def create_HenVms_from_basis(supercell, fbasis, nHes, mVs, fbasis_int="tetra_bcc
     data_int = make_supercell_from_basis(fbasis_int, supercell, a0=a0, out_atom_style="atomic")
 
     tol = 0.1 * a0
-    radius = a0 + 0.1
+    radius = a0 + tol
     inds, xyzs, ds, types = refdata.select_by_radius(radius, depress=None, center=center,
                                                      is_cartesian=is_cartesian, style=style,
                                                      delete=False, sort=True)
@@ -244,19 +244,18 @@ def create_HenVms_from_basis(supercell, fbasis, nHes, mVs, fbasis_int="tetra_bcc
     xyzs_int = xyzs[inds_int]
     inds_int = inds[inds_int]
 
-    for i in range(len(xyzs_int)):
-        print(f"-- interstitial site {i} is at {xyzs_int[i]}!")
-
+    outfiles = []
     for n in range(len(nHes)):
         nHe = nHes[n]
         for m in range(len(mVs)):
             mV = mVs[m]
             outdata = refdata.deepcopy()
             outdata = create_HenVm(outdata, data_int, nHe, mV, inds_vac, inds_int)
-            fname = "Fe_He" + str(nHe) + "V" + str(mV) + ".dat"
+            fname = outfheader + "_He" + str(nHe) + "V" + str(mV) + ".dat"
             outdata.to_file(fname)
+            outfiles.append(fname)
             print(f"-- finished fname:{fname}!")
-    return outdata
+    return outfiles
 
 def create_dislocation_loop_basis(supercell, supercell4layer, radius, center=[0.5, 0.5, 0.5], a0=2.83048847,
                                   fbasisid=0, flayerid=0, mergy_style=0, loop_shape="circle",
