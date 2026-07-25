@@ -83,6 +83,29 @@ def make_supercell_from_basis(fbasis, supercell, a0=2.83048847, out_atom_style="
         outdata.insert_molecular_id()
     return outdata
 
+def check_Cr_conc(thisdata, conc):
+    inds = np.arange(thisdata.natoms, dtype=int)
+    thistypes = thisdata.atoms['type'].to_numpy()
+    inds_Fe = np.compress(thistypes == 1, inds)
+    inds_Cr = np.compress(thistypes == 3, inds)
+
+    nFe = len(inds_Fe)
+    nCr = len(inds_Cr)
+    nCr_conc = int((nFe + nCr) * conc)
+    nCr_diff = nCr_conc - nCr
+    if nCr_diff > 0:
+        np.random.shuffle(inds_Fe)
+        inds_Cr = np.append(inds_Cr, inds_Fe[nFe - nCr_diff: nFe])
+        thistypes[inds_Cr] = 3
+        thisdata.atoms['type'] = thistypes
+    elif nCr_diff < 0:
+        np.random.shuffle(inds_Cr)
+        inds_Fe = np.append(inds_Fe, inds_Cr[nCr - nCr_diff: nCr])
+        thistypes[inds_Fe] = 1
+        thisdata.atoms['type'] = thistypes
+    thisdata.get_data_info()
+    return thisdata
+
 def Fe2Cr(thisdata, conc, to_typeid=3):
     inds = np.arange(thisdata.natoms, dtype=int)
     thistypes = thisdata.atoms['type'].to_numpy()
@@ -117,15 +140,16 @@ def insert_interstitial(fname,  fint, nint, to_typeid=2, atom_style="atomic", at
                         check_distance=False, rcut=1.5):
     orgdata = lmpData.from_file(fname, atom_style, sort_id=False)
     orgdata.assert_force_field(ff_elements, atomic_masses)
+    print(f"-- natoms original:{orgdata.natoms}!")
     outdata = orgdata.deepcopy()
     data_int = lmpData.from_file(fint, atom_style4int, sort_id=False)
     data_int.assert_force_field(ff_elements, atomic_masses)
     inds_int = np.arange(data_int.natoms, dtype=int)
     np.random.shuffle(inds_int)
-    i = 0
+    iloop = 0
     iaccept = 0
     while iaccept < nint:
-        nr = inds_int[i]
+        nr = inds_int[iloop]
         indict = data_int.atoms.iloc[nr].to_dict()
         default_dict = outdata.generate_default_dict()
         for key in default_dict.keys():
@@ -146,12 +170,17 @@ def insert_interstitial(fname,  fint, nint, to_typeid=2, atom_style="atomic", at
                 iaccept += 1
         else:
             iaccept += 1
-        i += 1
+        iloop += 1
+
+    print(f"-- natoms after insertion:{outdata.natoms}!")
+    print(f"--- finished fname:{fname} ---")
     return outdata
 
-def create_frenkel_pairs(fname, fint, npair, atom_style="atomic", atom_style4int="atomic"):
+def create_frenkel_pairs(fname, fint, npair, atom_style="atomic", atom_style4int="atomic",
+                         check_distance=False, rcut=1.5):
     orgdata = lmpData.from_file(fname, atom_style, sort_id=False)
     orgdata.assert_force_field(ff_elements, atomic_masses)
+
     outdata = orgdata.deepcopy()
     inds = np.arange(outdata.natoms, dtype=int)
     np.random.shuffle(inds)
@@ -159,7 +188,9 @@ def create_frenkel_pairs(fname, fint, npair, atom_style="atomic", atom_style4int
     outdata.remove_by_inds(del_inds, style="dyn")
     outdata.to_file("tmp.dat")
     outdata = insert_interstitial("tmp.dat", fint, npair, to_typeid=1,
-                                  atom_style=atom_style, atom_style4int=atom_style4int, rcut=1.5)
+                                  atom_style=atom_style, atom_style4int=atom_style4int,
+                                  check_distance=check_distance, rcut=rcut)
+    print(f"--- finished fname:{fname} ---")
     return outdata
 
 
@@ -258,7 +289,7 @@ def create_HenVms_from_basis(supercell, fbasis, nHes, mVs, fbasis_int="tetra_bcc
     return outfiles
 
 def create_dislocation_loop_basis(supercell, supercell4layer, radius, center=[0.5, 0.5, 0.5], a0=2.83048847,
-                                  fbasisid=0, flayerid=0, mergy_style=0, loop_shape="circle",
+                                  fbasis=None, fbasisid=0, flayerid=0, mergy_style=0, loop_shape="circle",
                                   splits=[0.0, -0.25, -0.25], lengths=None, subdata=None,):
     '''
     layms = [
@@ -268,18 +299,19 @@ def create_dislocation_loop_basis(supercell, supercell4layer, radius, center=[0.
     ]
 
     centers = [[0.5, 0.5, 0.25], [0.5, 0.5, 0.75]]
-    splitss = [[-0.15, -0.1, -0.3], [0, -0.23, -0.23]]
+    splitss = [[-0.15, -0.1, -0.3], [0, -0.23, -0.23]] wrt a0
 
     note that the second SIL has the identical orientation with substrate.
     this second splits on the second SIL, visually has 111/2 but has higher energy
     '''
 
     if fbasisid == 0:
-        fbasis = "bcc112_111_110.data"
+        if fbasis is None:
+            fbasis = "bcc112_111_110.data"
         subm = np.array([[1, 1, -2], [1, 1, 1], [1, -1, 0]])
-        splitss = [0.0, -0.25, -0.25]
     else:
-        fbasis = "bcc.data"
+        if fbasis is None:
+            fbasis = "bcc.data"
         subm = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
     if flayerid == 0:
         flayer = "bcc112_111_110.data"
