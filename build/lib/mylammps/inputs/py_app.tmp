@@ -1,5 +1,0 @@
-from lammps import lammps
-infile = "in.lammps"
-lmp = lammps()
-lmp.file(infile)
-lmp.close()
