@@ -12,7 +12,10 @@ ff_elements = ["Fe", "He", "Cr"]
 atomic_masses = [55.845, 4.0026, 51.9961]
 lattice_parameters = [2.83048847, 2.67054960, 2.82958219]
 ground_energies = [-8.24159650, 0.01474557, -9.45576250]
-Cr_Concs = [0.03, 0.09]
+Cr_Concs = [0.03, 0.10]
+a0Crs = [2.83218, 2.83511]
+epaCrs =[-8.27616063, -8.35194938]
+epaCrs_partition = [[-7.0433014175257735, -48.138606458333335], [-4.280546540747361, -44.994575187500004]]
 
 def sort_by_dynamic_center(xyzs):
     xyzs = np.array(xyzs)
