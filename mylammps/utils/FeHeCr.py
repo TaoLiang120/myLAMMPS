@@ -345,7 +345,7 @@ def create_HenVm(outdata, data_int, nHe, mV, inds_vac, inds_int, to_typeid=2):
 def create_HenVms_from_basis(supercell, fbasis, nHes, mVs,
                              fbasis_int="tetra_bcc.data", supercell4int=None, a0=2.83048847,
                              center=[0.5, 0.5, 0.5], is_cartesian=False, style=0,
-                             refdata=None, outfheader="Fe"):
+                             refdata=None, outfheader="Fe", check_distance=False, rcut=1.2):
     '''
     :param supercell:
     :param fbasis:
@@ -388,6 +388,19 @@ def create_HenVms_from_basis(supercell, fbasis, nHes, mVs,
     inds_int = sort_by_ref_coords(xyzs, xyzs_vac)
     xyzs_int = xyzs[inds_int]
     inds_int = inds[inds_int]
+
+    if check_distance:
+        nHemax = np.max(np.array(nHes))
+        nHemax = min(nHemax, len(inds_int))
+        for i in range(nHemax):
+            coords = np.array([xyzs_int[i][0], xyzs_int[i][1], xyzs_int[i][2]])
+            inds, xyzs, distances, types = refdata.compute_site_distance(coords, refdata,
+                                                                         style=0, rcut=rcut, sort=False)
+            if len(inds) > 0:
+                print(f"-- ind_int:{inds_int[i]} xyz:{coords} has {distances[0]} with refdata ind:{inds[0]} xyz:{xyzs[0]}")
+            else:
+                pass
+
 
     outfiles = []
     for n in range(len(nHes)):
