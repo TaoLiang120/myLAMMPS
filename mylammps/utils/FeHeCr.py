@@ -347,12 +347,14 @@ def create_HenVm(outdata, data_int, nHe, mV, inds_vac, inds_int, to_typeid=2, ch
                                                                             style=0, rcut=rcut, sort=False)
                     if len(inds) > 0:
                         pass
+                        # print(f"iloop:{iloop} coords:{coords} xyzs:{xyzs[0]} id:{inds[0]} distance:{distances[0]}")
                     else:
                         outdata.atoms.loc[outdata.idmax + 1] = indict
                         outdata.idmax += 1
                         outdata.initialization()
                         iaccept += 1
                     iloop += 1
+                # print(f"nHe:{nHe} mV:{mV} nadd:{nadd} length:{len(inds_int)} iaccept:{iaccept} iloop:{iloop}")
             else:
                 for i in range(nadd):
                     indict = indicts_int[i]
@@ -414,13 +416,16 @@ def create_HenVms_from_basis(supercell, fbasis, nHes, mVs,
         nHe = nHes[n]
         for m in range(len(mVs)):
             mV = mVs[m]
-            outdata = refdata.deepcopy()
-            outdata = create_HenVm(outdata, data_int, nHe, mV, inds_vac, inds_int,
-                                   check_distance=check_distance, rcut=rcut)
-            fname = outfheader + "_He" + str(nHe) + "V" + str(mV) + ".dat"
-            outdata.to_file(fname)
-            outfiles.append(fname)
-            print(f"-- finished fname:{fname}!")
+            if nHe == 0 and mV == 0:
+                pass
+            else:
+                outdata = refdata.deepcopy()
+                outdata = create_HenVm(outdata, data_int, nHe, mV, inds_vac, inds_int,
+                                       check_distance=check_distance, rcut=rcut)
+                fname = outfheader + "_He" + str(nHe) + "V" + str(mV) + ".dat"
+                outdata.to_file(fname)
+                outfiles.append(fname)
+                print(f"-- finished fname:{fname}!")
     return outfiles
 
 
