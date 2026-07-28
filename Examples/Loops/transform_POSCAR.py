@@ -44,13 +44,17 @@ outdata.to_file("bcc_10x10x10.data")
 
 
 fname = "bcc.POSCAR"
-thisdata = lmpData.from_POSCAR(fname, atom_style, ff_elements=ff_elements, is_sort=is_sort)
+outdata = lmpData.from_POSCAR(fname, atom_style, ff_elements=ff_elements, is_sort=is_sort)
 outdata.to_file("bcc.data")
 
 fname = "tetra_bcc.POSCAR"
-thisdata = lmpData.from_POSCAR(fname, atom_style, ff_elements=ff_elements, is_sort=is_sort)
+outdata = lmpData.from_POSCAR(fname, atom_style, ff_elements=ff_elements, is_sort=is_sort)
 outdata.to_file("tetra_bcc.data")
 
 fname = "octa_bcc.POSCAR"
-thisdata = lmpData.from_POSCAR(fname, atom_style, ff_elements=ff_elements, is_sort=is_sort)
+outdata = lmpData.from_POSCAR(fname, atom_style, ff_elements=ff_elements, is_sort=is_sort)
 outdata.to_file("octa_bcc.data")
+
+fname = "tetra_octa_bcc.POSCAR"
+outdata = lmpData.from_POSCAR(fname, atom_style, ff_elements=ff_elements, is_sort=is_sort)
+outdata.to_file("tetra_octa_bcc.data")

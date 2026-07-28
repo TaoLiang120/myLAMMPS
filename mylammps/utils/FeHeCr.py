@@ -214,80 +214,6 @@ def add_vacuum_relaxed_screw(fname, lvac, atom_style="atomic", orientation=True)
         outdata.swap_axes(newaxis)
     return outdata
 
-def create_HenVm(outdata, data_int, nHe, mV, inds_vac, inds_int, to_typeid=2):
-    indicts_vac = []
-    for i in range(len(inds_vac)):
-        indicts_vac.append(outdata.atoms.iloc[inds_vac[i]].to_dict())
-    indicts_int = []
-    for i in range(len(inds_int)):
-        indicts_int.append(data_int.atoms.iloc[inds_int[i]].to_dict())
-
-    if mV > 0:
-        outdata.remove_by_inds(inds_vac[0:mV], style="dyn")
-    if nHe > 0:
-        if nHe <= mV:
-            for i in range(nHe):
-                indict = indicts_vac[i]
-                indict['type'] = to_typeid
-                outdata.add_an_entry(indict, loc=None, check_distance=False)
-        else:
-            for i in range(mV):
-                indict = indicts_vac[i]
-                indict['type'] = to_typeid
-                outdata.add_an_entry(indict, loc=None, check_distance=False)
-            nadd = nHe - mV
-            for i in range(nadd):
-                indict = indicts_int[i]
-                indict['type'] = to_typeid
-                outdata.add_an_entry(indict, loc=None, check_distance=False, rcut=1.0)
-    return outdata
-
-def create_HenVms_from_basis(supercell, fbasis, nHes, mVs, fbasis_int="tetra_bcc.data", a0=2.83048847,
-                             center=[0.5, 0.5, 0.5], is_cartesian=False, style=0, refdata=None, outfheader="Fe"):
-    '''
-
-    :param supercell:
-    :param fbasis:
-    :param nHes:
-    :param mVs:
-    :param fbasis_int:
-    :param a0:
-    :param center:
-    :return:
-    '''
-    if refdata is None:
-        refdata = make_supercell_from_basis(fbasis, supercell, a0=a0, out_atom_style="atomic")
-    data_int = make_supercell_from_basis(fbasis_int, supercell, a0=a0, out_atom_style="atomic")
-
-    tol = 0.1 * a0
-    radius = a0 + tol
-    inds, xyzs, ds, types = refdata.select_by_radius(radius, depress=None, center=center,
-                                                     is_cartesian=is_cartesian, style=style,
-                                                     delete=False, sort=True)
-    inds_vac = sort_by_dynamic_center(xyzs) #local index
-    xyzs_vac = xyzs[inds_vac]
-    inds_vac = inds[inds_vac]
-
-    inds, xyzs, ds, types = data_int.select_by_radius(radius, depress=None, center=center,
-                                                      is_cartesian=is_cartesian, style=style,
-                                                      delete=False, sort=True)
-    inds_int = sort_by_ref_coords(xyzs, xyzs_vac)
-    xyzs_int = xyzs[inds_int]
-    inds_int = inds[inds_int]
-
-    outfiles = []
-    for n in range(len(nHes)):
-        nHe = nHes[n]
-        for m in range(len(mVs)):
-            mV = mVs[m]
-            outdata = refdata.deepcopy()
-            outdata = create_HenVm(outdata, data_int, nHe, mV, inds_vac, inds_int)
-            fname = outfheader + "_He" + str(nHe) + "V" + str(mV) + ".dat"
-            outdata.to_file(fname)
-            outfiles.append(fname)
-            print(f"-- finished fname:{fname}!")
-    return outfiles
-
 def create_dislocation_loop_basis(supercell, supercell4layer, radius, center=[0.5, 0.5, 0.5], a0=2.83048847,
                                   fbasis=None, fbasisid=0,
                                   flayer=None, flayerid=0,
@@ -387,6 +313,95 @@ def create_dislocation_loop_basis(supercell, supercell4layer, radius, center=[0.
     fout += str(loop_shape[0:3]) + "_d_" +  str(int(radius * 2.0)) + "A.dat"
     outdata.to_file(fout)
     return outdata
+
+def create_HenVm(outdata, data_int, nHe, mV, inds_vac, inds_int, to_typeid=2):
+    indicts_vac = []
+    for i in range(len(inds_vac)):
+        indicts_vac.append(outdata.atoms.iloc[inds_vac[i]].to_dict())
+    indicts_int = []
+    for i in range(len(inds_int)):
+        indicts_int.append(data_int.atoms.iloc[inds_int[i]].to_dict())
+
+    if mV > 0:
+        outdata.remove_by_inds(inds_vac[0:mV], style="dyn")
+    if nHe > 0:
+        if nHe <= mV:
+            for i in range(nHe):
+                indict = indicts_vac[i]
+                indict['type'] = to_typeid
+                outdata.add_an_entry(indict, loc=None, check_distance=False)
+        else:
+            for i in range(mV):
+                indict = indicts_vac[i]
+                indict['type'] = to_typeid
+                outdata.add_an_entry(indict, loc=None, check_distance=False)
+            nadd = nHe - mV
+            for i in range(nadd):
+                indict = indicts_int[i]
+                indict['type'] = to_typeid
+                outdata.add_an_entry(indict, loc=None, check_distance=False, rcut=1.0)
+    return outdata
+
+def create_HenVms_from_basis(supercell, fbasis, nHes, mVs,
+                             fbasis_int="tetra_bcc.data", supercell4int=None, a0=2.83048847,
+                             center=[0.5, 0.5, 0.5], is_cartesian=False, style=0,
+                             refdata=None, outfheader="Fe"):
+    '''
+    :param supercell:
+    :param fbasis:
+    :param nHes:
+    :param mVs:
+    :param fbasis_int:
+    :param a0:
+    :param center:
+    :return:
+    '''
+    if refdata is None:
+        refdata = make_supercell_from_basis(fbasis, supercell, a0=a0, out_atom_style="atomic")
+
+    if supercell4int is None:
+        supercell4int = copy.deepcopy(supercell)
+
+    tol = 0.1 * a0
+    radius = a0 + tol
+    inds, xyzs, ds, types = refdata.select_by_radius(radius, depress=None, center=center,
+                                                     is_cartesian=is_cartesian, style=style,
+                                                     delete=False, sort=True)
+    inds_vac = sort_by_dynamic_center(xyzs) #local index
+    xyzs_vac = xyzs[inds_vac]
+    inds_vac = inds[inds_vac]
+
+
+    data_int = make_supercell_from_basis(fbasis_int, supercell4int, a0=a0, out_atom_style="atomic")
+    if not is_cartesian:
+        refcenter = np.dot(center, refdata.box.matrix)
+    else:
+        refcenter = copy.deepcopy(center)
+    intcent = np.dot([0.5, 0.5, 0.5], data_int.box.matrix)
+    translations = refcenter - intcent
+
+
+    data_int.modify_atoms(translation=translations, is_cartesian=True, normalization=False)
+    inds, xyzs, ds, types = data_int.select_by_radius(radius, depress=None, center=refcenter,
+                                                      is_cartesian=True, style=0,
+                                                      delete=False, sort=True)
+    inds_int = sort_by_ref_coords(xyzs, xyzs_vac)
+    xyzs_int = xyzs[inds_int]
+    inds_int = inds[inds_int]
+
+    outfiles = []
+    for n in range(len(nHes)):
+        nHe = nHes[n]
+        for m in range(len(mVs)):
+            mV = mVs[m]
+            outdata = refdata.deepcopy()
+            outdata = create_HenVm(outdata, data_int, nHe, mV, inds_vac, inds_int)
+            fname = outfheader + "_He" + str(nHe) + "V" + str(mV) + ".dat"
+            outdata.to_file(fname)
+            outfiles.append(fname)
+            print(f"-- finished fname:{fname}!")
+    return outfiles
+
 
 
 
