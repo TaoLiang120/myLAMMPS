@@ -314,7 +314,7 @@ def create_dislocation_loop_basis(supercell, supercell4layer, radius, center=[0.
     outdata.to_file(fout)
     return outdata
 
-def create_HenVm(outdata, data_int, nHe, mV, inds_vac, inds_int, to_typeid=2):
+def create_HenVm(outdata, data_int, nHe, mV, inds_vac, inds_int, to_typeid=2, check_distance=False, rcut=1.2):
     indicts_vac = []
     for i in range(len(inds_vac)):
         indicts_vac.append(outdata.atoms.iloc[inds_vac[i]].to_dict())
@@ -335,11 +335,31 @@ def create_HenVm(outdata, data_int, nHe, mV, inds_vac, inds_int, to_typeid=2):
                 indict = indicts_vac[i]
                 indict['type'] = to_typeid
                 outdata.add_an_entry(indict, loc=None, check_distance=False)
+
             nadd = nHe - mV
-            for i in range(nadd):
-                indict = indicts_int[i]
-                indict['type'] = to_typeid
-                outdata.add_an_entry(indict, loc=None, check_distance=False, rcut=1.0)
+            if check_distance:
+                iloop = 0
+                iaccept = 0
+                while iaccept < nadd and iloop < len(inds_int):
+                    indict = indicts_int[iloop]
+                    coords = np.array([indict['x'], indict['y'], indict['z']])
+                    inds, xyzs, distances, types = lmpData.compute_site_distance(coords, outdata,
+                                                                            style=0, rcut=rcut, sort=False)
+                    if len(inds) > 0:
+                        pass
+                    else:
+                        outdata.atoms.loc[outdata.idmax + 1] = indict
+                        outdata.idmax += 1
+                        outdata.initialization()
+                        iaccept += 1
+                    iloop += 1
+            else:
+                for i in range(nadd):
+                    indict = indicts_int[i]
+                    indict['type'] = to_typeid
+                    outdata.add_an_entry(indict, loc=None, check_distance=False, rcut=1.0)
+
+    outdata.reset_atom_ids()
     return outdata
 
 def create_HenVms_from_basis(supercell, fbasis, nHes, mVs,
@@ -389,31 +409,20 @@ def create_HenVms_from_basis(supercell, fbasis, nHes, mVs,
     xyzs_int = xyzs[inds_int]
     inds_int = inds[inds_int]
 
-    if check_distance:
-        nHemax = np.max(np.array(nHes))
-        nHemax = min(nHemax, len(inds_int))
-        for i in range(nHemax):
-            coords = np.array([xyzs_int[i][0], xyzs_int[i][1], xyzs_int[i][2]])
-            inds, xyzs, distances, types = refdata.compute_site_distance(coords, refdata,
-                                                                         style=0, rcut=rcut, sort=False)
-            if len(inds) > 0:
-                print(f"-- ind_int:{inds_int[i]} xyz:{coords} has {distances[0]} with refdata ind:{inds[0]} xyz:{xyzs[0]}")
-            else:
-                pass
-
-
     outfiles = []
     for n in range(len(nHes)):
         nHe = nHes[n]
         for m in range(len(mVs)):
             mV = mVs[m]
             outdata = refdata.deepcopy()
-            outdata = create_HenVm(outdata, data_int, nHe, mV, inds_vac, inds_int)
+            outdata = create_HenVm(outdata, data_int, nHe, mV, inds_vac, inds_int,
+                                   check_distance=check_distance, rcut=rcut)
             fname = outfheader + "_He" + str(nHe) + "V" + str(mV) + ".dat"
             outdata.to_file(fname)
             outfiles.append(fname)
             print(f"-- finished fname:{fname}!")
     return outfiles
+
 
 
 
