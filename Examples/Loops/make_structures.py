@@ -24,19 +24,15 @@ a0=2.83048847
 
 fbasis = "bcc.data"
 fbasis_int = "tetra_bcc.data"
-supercell = [20, 20, 20]
+supercell = [4, 4, 4]
 supercell4int = [4, 4, 4]
 
 nHes = [2]
 mVs = [1]
 center0 = [0.5, 0.5, 0.5]
-
-print("Making structures...")
-
-outfolders = MTPutil.create_HenVms_from_basis(supercell, fbasis, nHes, mVs,
-                                              fbasis_int=fbasis_int, a0=a0,
-                                              supercell4int=supercell4int,
-                                              center=center0, is_cartesian=False, style=0,
-                                              refdata=None, outfheader="Fe")
-
-print("outfolders: ", outfolders, "")
+outdata = MTPutil.make_supercell_from_basis(fbasis, supercell, a0=2.83048847, out_atom_style="atomic")
+fname = "in.dat"
+outdata.to_file(fname)
+outdata = MTPutil.create_dumbbell(fname, 0, dumbbelltype=0, to_typeid=3, atom_style="atomic", to_typeid4org=None,
+                        a0=2.83048847)
+outdata.to_file(fname)

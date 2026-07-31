@@ -8,7 +8,7 @@ from pymatgen.core.lattice import Lattice
 from sympy.codegen.ast import continue_
 
 from mylammps.inputs.data import lmpBox, lmpData, find_symmop_lattices
-
+coordsindex = ['x', 'y', 'z']
 
 ff_elements = ["Fe", "He", "Cr"]
 atomic_masses = [55.845, 4.0026, 51.9961]
@@ -181,7 +181,6 @@ def insert_inter_from_fint(fname,  fint, nint, to_typeid=2, atom_style="atomic",
 def create_frenkel_pairs(fname, fint, npair, atom_style="atomic", atom_style4int="atomic",
                          check_distance=False, rcut=1.5):
     orgdata = lmpData.from_file(fname, atom_style, sort_id=False)
-    orgdata.assert_force_field(ff_elements, atomic_masses)
 
     outdata = orgdata.deepcopy()
     inds = np.arange(outdata.natoms, dtype=int)
@@ -388,46 +387,20 @@ def create_dumbbell(fname, ind, dumbbelltype=0, to_typeid=3, atom_style="atomic"
     bondlength = a0 * np.sqrt(3) / 2
 
     center_dict = outdata.atoms.iloc[ind].to_dict()
-    center = np.array([center_dict['x'], center_dict['y'], center_dict['z']])
-    inds, xyzs, ds, types = outdata.select_by_radius(radius, depress=None, center=center,
-                                                     is_cartesian=True, style=0,
-                                                     delete=False, sort=True)
-
     int_dict = copy.deepcopy(center_dict)
-    xyzorg = xyzs[0]
+    xyzorg = np.array([center_dict['x'], center_dict['y'], center_dict['z']])
     if dumbbelltype == 1:
-        for i in range(len(inds)-1, -1, -1):
-            d = ds[i]
-            if d > a0 - tol and d < a0 + tol:
-                indint = inds[i]
-                xyzint = xyzs[i]
-                diffs = (xyzint - xyzorg) * 0.33
-                for j in range(2, 3):
-                    center_dict['j'] = xyzorg[j] + diffs[j]
-                    int_dict['j'] = xyzorg[j] - diffs[j]
-                break
+        for j in range(2, 3):
+            center_dict[coordsindex[j]] = xyzorg[j] + a0 * 0.33
+            int_dict[coordsindex[j]] = xyzorg[j] - a0 * 0.33
     elif dumbbelltype == 2:
-        for i in range(len(inds)-1, -1, -1):
-            d = ds[i]
-            if d > a0 - tol and d < a0 + tol:
-                indint = inds[i]
-                xyzint = xyzs[i]
-                diffs = (xyzint - xyzorg) * 0.25
-                for j in range(3):
-                    center_dict['j'] = xyzorg[j] + diffs[j]
-                    int_dict['j'] = xyzorg[j] - diffs[j]
-                break
+        for j in range(3):
+            center_dict[coordsindex[j]] = xyzorg[j] + a0 * 0.25
+            int_dict[coordsindex[j]] = xyzorg[j] - a0 * 0.25
     else:
-        for i in range(len(inds)-1, -1, -1):
-            d = ds[i]
-            if d > a0 - tol and d < a0 + tol:
-                indint = inds[i]
-                xyzint = xyzs[i]
-                diffs = (xyzint - xyzorg) * 0.25
-                for j in range(1,3):
-                    center_dict['j'] = xyzorg[j] + diffs[j]
-                    int_dict['j'] = xyzorg[j] - diffs[j]
-                break
+        for j in range(1, 3):
+            center_dict[coordsindex[j]] = xyzorg[j] + a0 * 0.3
+            int_dict[coordsindex[j]] = xyzorg[j] - a0 * 0.3
     if isinstance(to_typeid4org, int):
         center_dict['type'] = to_typeid4org
     outdata.atoms.iloc[ind] = center_dict
