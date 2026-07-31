@@ -5,6 +5,8 @@ import numpy as np
 import pandas as pd
 
 from pymatgen.core.lattice import Lattice
+from sympy.codegen.ast import continue_
+
 from mylammps.inputs.data import lmpBox, lmpData, find_symmop_lattices
 
 
@@ -136,7 +138,7 @@ def Fe2Crs_from_a_file(fname, Cr_concs=Cr_Concs,  foutheader=None, atom_style="a
     print(f"-- finished fname:{fname}!")
     return outfnames
 
-def insert_interstitial(fname,  fint, nint, to_typeid=2, atom_style="atomic", atom_style4int="atomic",
+def insert_inter_from_fint(fname,  fint, nint, to_typeid=2, atom_style="atomic", atom_style4int="atomic",
                         check_distance=False, rcut=1.5):
     orgdata = lmpData.from_file(fname, atom_style, sort_id=False)
     orgdata.assert_force_field(ff_elements, atomic_masses)
@@ -187,7 +189,7 @@ def create_frenkel_pairs(fname, fint, npair, atom_style="atomic", atom_style4int
     del_inds = inds[0:npair]
     outdata.remove_by_inds(del_inds, style="dyn")
     outdata.to_file("tmp.dat")
-    outdata = insert_interstitial("tmp.dat", fint, npair, to_typeid=1,
+    outdata = insert_inter_from_fint("tmp.dat", fint, npair, to_typeid=1,
                                   atom_style=atom_style, atom_style4int=atom_style4int,
                                   check_distance=check_distance, rcut=rcut)
     print(f"--- finished fname:{fname} ---")
@@ -362,6 +364,75 @@ def create_HenVm(outdata, data_int, nHe, mV, inds_vac, inds_int, to_typeid=2, ch
                     outdata.add_an_entry(indict, loc=None, check_distance=False, rcut=1.0)
 
     outdata.reset_atom_ids()
+    return outdata
+
+def create_dumbbell(fname, ind, dumbbelltype=0, to_typeid=3, atom_style="atomic", to_typeid4org=None,
+                        a0=2.83048847):
+    '''
+
+    :param fname:
+    :param ind:
+    :param dumbbelltype: 1:100 2:111 0:110
+    :param to_typeid:
+    :param atom_style:
+    :param to_typeid4org:
+    :param a0:
+    :return:
+    '''
+    orgdata = lmpData.from_file(fname, atom_style, sort_id=False)
+    orgdata.assert_force_field(ff_elements, atomic_masses)
+    outdata = orgdata.deepcopy()
+
+    tol = 0.1 * a0
+    radius = a0 + tol
+    bondlength = a0 * np.sqrt(3) / 2
+
+    center_dict = outdata.atoms.iloc[ind].to_dict()
+    center = np.array([center_dict['x'], center_dict['y'], center_dict['z']])
+    inds, xyzs, ds, types = outdata.select_by_radius(radius, depress=None, center=center,
+                                                     is_cartesian=True, style=0,
+                                                     delete=False, sort=True)
+
+    int_dict = copy.deepcopy(center_dict)
+    xyzorg = xyzs[0]
+    if dumbbelltype == 1:
+        for i in range(len(inds)-1, -1, -1):
+            d = ds[i]
+            if d > a0 - tol and d < a0 + tol:
+                indint = inds[i]
+                xyzint = xyzs[i]
+                diffs = (xyzint - xyzorg) * 0.33
+                for j in range(2, 3):
+                    center_dict['j'] = xyzorg[j] + diffs[j]
+                    int_dict['j'] = xyzorg[j] - diffs[j]
+                break
+    elif dumbbelltype == 2:
+        for i in range(len(inds)-1, -1, -1):
+            d = ds[i]
+            if d > a0 - tol and d < a0 + tol:
+                indint = inds[i]
+                xyzint = xyzs[i]
+                diffs = (xyzint - xyzorg) * 0.25
+                for j in range(3):
+                    center_dict['j'] = xyzorg[j] + diffs[j]
+                    int_dict['j'] = xyzorg[j] - diffs[j]
+                break
+    else:
+        for i in range(len(inds)-1, -1, -1):
+            d = ds[i]
+            if d > a0 - tol and d < a0 + tol:
+                indint = inds[i]
+                xyzint = xyzs[i]
+                diffs = (xyzint - xyzorg) * 0.25
+                for j in range(1,3):
+                    center_dict['j'] = xyzorg[j] + diffs[j]
+                    int_dict['j'] = xyzorg[j] - diffs[j]
+                break
+    if isinstance(to_typeid4org, int):
+        center_dict['type'] = to_typeid4org
+    outdata.atoms.iloc[ind] = center_dict
+    int_dict['type'] = to_typeid
+    outdata.add_an_entry(int_dict, loc=None, check_distance=False)
     return outdata
 
 def create_HenVms_from_basis(supercell, fbasis, nHes, mVs,
