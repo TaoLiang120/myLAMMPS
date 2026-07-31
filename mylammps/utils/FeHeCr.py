@@ -401,8 +401,12 @@ def create_dumbbell(fname, ind, dumbbelltype=0, to_typeid=3, atom_style="atomic"
         for j in range(1, 3):
             center_dict[coordsindex[j]] = xyzorg[j] + a0 * 0.3
             int_dict[coordsindex[j]] = xyzorg[j] - a0 * 0.3
-    if isinstance(to_typeid4org, int):
-        center_dict['type'] = to_typeid4org
+
+    if to_typeid4org is None:
+        pass
+    else:
+        if isinstance(to_typeid4org, int):
+            center_dict['type'] = to_typeid4org
     outdata.atoms.iloc[ind] = center_dict
     int_dict['type'] = to_typeid
     outdata.add_an_entry(int_dict, loc=None, check_distance=False)
