@@ -181,7 +181,7 @@ def insert_inter_from_fint(fname,  fint, nint, to_typeid=2, atom_style="atomic",
 def create_frenkel_pairs(fname, fint, npair, atom_style="atomic", atom_style4int="atomic",
                          check_distance=False, rcut=1.5):
     orgdata = lmpData.from_file(fname, atom_style, sort_id=False)
-
+    orgdata.assert_force_field(ff_elements, atomic_masses)
     outdata = orgdata.deepcopy()
     inds = np.arange(outdata.natoms, dtype=int)
     np.random.shuffle(inds)
@@ -380,6 +380,7 @@ def create_dumbbell(fname, ind, dumbbelltype=0, to_typeid=3, atom_style="atomic"
     '''
     orgdata = lmpData.from_file(fname, atom_style, sort_id=False)
     orgdata.assert_force_field(ff_elements, atomic_masses)
+    orgdata.integerization()
     outdata = orgdata.deepcopy()
 
     tol = 0.1 * a0
@@ -402,14 +403,15 @@ def create_dumbbell(fname, ind, dumbbelltype=0, to_typeid=3, atom_style="atomic"
             center_dict[coordsindex[j]] = xyzorg[j] + a0 * 0.3
             int_dict[coordsindex[j]] = xyzorg[j] - a0 * 0.3
 
-    if to_typeid4org is None:
-        pass
-    else:
-        if isinstance(to_typeid4org, int):
-            center_dict['type'] = to_typeid4org
-    outdata.atoms.iloc[ind] = center_dict
+
+    if isinstance(to_typeid4org, int):
+        center_dict['type'] = to_typeid4org
+    outdata.add_an_entry(center_dict, loc=None, check_distance=False)
     int_dict['type'] = to_typeid
     outdata.add_an_entry(int_dict, loc=None, check_distance=False)
+    outdata.remove_by_inds(ind, style="dyn")
+    outdata.reset_atom_ids()
+    print(f"finished insert a dumbbell with dumbbelltype of {dumbbelltype}")
     return outdata
 
 def create_HenVms_from_basis(supercell, fbasis, nHes, mVs,
