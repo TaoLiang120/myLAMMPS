@@ -379,8 +379,10 @@ class lmpData(LammpsData, MSONable):
         self.atoms = self.atoms[ATOMS_HEADERS[self.atom_style]]
         return self.structure
 
-    def to_POSCAR(self, filename, direct=True, significant_figures=18):
+    def to_POSCAR(self, filename, sort=True, direct=True, significant_figures=18):
         s = self.to_structure()
+        if sort:
+            s = s.get_sorted_structure()
         p = Poscar(s)
         p.write_file(filename, direct=direct, significant_figures=significant_figures)
 
@@ -1119,8 +1121,8 @@ class lmpData(LammpsData, MSONable):
                                   Fractional=True, style="INCLUSION", delete=True)
             self.fracts2coords()
             self.modify_atoms(translation=[-0.001, -0.001, -0.001], rotation=None, is_cartesian=True, inds=None)
-            if reset_ids:
-                self.reset_atom_ids()
+        if reset_ids:
+            self.reset_atom_ids()
 
     def distort_data(self, distort, distorttype, dca=0, ca0=1.60, crystal="bcc"):
         if distorttype == "EOS":

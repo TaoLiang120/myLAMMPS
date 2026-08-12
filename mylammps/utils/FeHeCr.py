@@ -325,6 +325,8 @@ def create_HenVm(outdata, data_int, nHe, mV, inds_vac, inds_int, to_typeid=2, ch
 
     if mV > 0:
         outdata.remove_by_inds(inds_vac[0:mV], style="dyn")
+        outdata.reset_atom_ids()
+        outdata.idmax = len(outdata.atoms)
     if nHe > 0:
         if nHe <= mV:
             for i in range(nHe):
@@ -343,6 +345,7 @@ def create_HenVm(outdata, data_int, nHe, mV, inds_vac, inds_int, to_typeid=2, ch
                 iaccept = 0
                 while iaccept < nadd and iloop < len(inds_int):
                     indict = indicts_int[iloop]
+                    indict['type'] = to_typeid
                     coords = np.array([indict['x'], indict['y'], indict['z']])
                     inds, xyzs, distances, types = lmpData.compute_site_distance(coords, outdata,
                                                                             style=0, rcut=rcut, sort=False)
