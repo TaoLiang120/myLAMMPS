@@ -846,7 +846,7 @@ class lmpData(LammpsData, MSONable):
 
         if default_dict['type'] > self.ntypes:
             self.assert_force_field(ff_elements, atomic_masses=atomic_masses)
-        print(f"added an entry with id: {self.idmax} default_dict:{default_dict}")
+
         self.initialization()
         if check_distance:
             coords = np.array([default_dict['x'], default_dict['y'], default_dict['z']])
