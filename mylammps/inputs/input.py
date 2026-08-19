@@ -16,7 +16,7 @@ import shutil
 from mylammps.myglobal import config_vars
 
 Input_Path = config_vars["Input_Path"]
-Work_Path = config_vars["Work_Path"]
+#Work_Path = config_vars["Work_Path"]
 
 
 class lmpInputs:
@@ -24,13 +24,16 @@ class lmpInputs:
             self,
             finput,
             fname4py_app="py_app.tmp",
+            INPUT_PATH=Input_Path,
     ):
         self.finput = finput
-        with open(Input_Path + "/" + finput, 'r') as f:
+        self.INPUT_PATH = INPUT_PATH
+
+        with open(self.INPUT_PATH  + "/" + finput, 'r') as f:
             self.lines = f.readlines()
         self.nlines = len(self.lines)
 
-        fname = os.path.join(Input_Path + "/" + fname4py_app)
+        fname = os.path.join(self.INPUT_PATH  + "/" + fname4py_app)
         with open(fname, 'r') as f:
             self.lines4py_app = f.readlines()
         self.nlines4py_app = len(self.lines4py_app)
@@ -52,7 +55,7 @@ class lmpInputs:
                     self.nlines += 1
 
     def update_external_file(self, infname, outfold, outfname=None, **kwargs):
-        with open(Input_Path + "/" + infname, 'r') as f:
+        with open(self.INPUT_PATH  + "/" + infname, 'r') as f:
             lines = f.readlines()
         nlines = len(lines)
         if kwargs:
@@ -81,11 +84,11 @@ class lmpInputs:
                 f.write(line)
 
     @staticmethod
-    def copy_files(fnames, outfold):
+    def copy_files(fnames, outfold, INPUT_PATH=Input_Path):
         if isinstance(fnames, str):
             fnames = [fnames]
         for fname in fnames:
-            shutil.copy(Input_Path + "/" + fname, outfold + "/" + fname)
+            shutil.copy(INPUT_PATH + "/" + fname, outfold + "/" + fname)
 
     def to_file(self, outfold, finput="in.lammps"):
         with open(outfold + "/" + finput, 'w') as f:
@@ -93,82 +96,22 @@ class lmpInputs:
                 f.write(line)
         return finput
 
-    def app_to_file(self, outfold, finput="in.lammps", outfname4py_app="application_py"):
-        self.lines4py_app[1] = "infile = " + '"' + finput + '"' + "\n"
-        with open(outfold + "/" + outfname4py_app, 'w') as f:
-            for line in self.lines4py_app:
-                f.write(line)
-        return outfname4py_app
-
-class SeakmcInputs:
-    def __init__(
-            self,
-            finput,
-            fname4py_app="run_seakmc_p.py",
-    ):
-        self.finput = finput
-        with open(Input_Path + "/" + finput, 'r') as f:
-            self.lines = f.readlines()
-        self.nlines = len(self.lines)
-
-        fname = os.path.join(Input_Path + "/" + fname4py_app)
-        with open(fname, 'r') as f:
-            self.lines4py_app = f.readlines()
-        self.nlines4py_app = len(self.lines4py_app)
-
-    def update_inputfile(self, **kwargs):
-        if kwargs:
-            nlines = self.nlines
-            for k in kwargs:
-                v = kwargs[k]
-                for iline in range(nlines-1, -1, -1):
-                    line = self.lines[iline]
-                    if str(k) in line:
-                        newlines = line.split(str(k))
-                        newlines[-1] = str(k) + ": " + str(v) + "\n"
-                        newline = ""
-                        for j in range(len(newlines)):
-                            newline += newlines[j]
-                        self.lines[iline] = newline
-
-    def update_external_file(self, infname, outfold, outfname=None, **kwargs):
-        with open(Input_Path + "/" + infname, 'r') as f:
-            lines = f.readlines()
-        nlines = len(lines)
-        if kwargs:
-            nlines_org = nlines
-            for k in kwargs:
-                v = kwargs[k]
-                isreplaced = False
-                for iline in range(nlines_org):
-                    line = lines[iline]
-                    if str(k) in line:
-                        if not isreplaced:
-                            lines[iline] = str(k) + " " + str(v) + "\n"
-                            isreplaced = True
-                if not isreplaced:
-                    lines.append(str(k) + " " + str(v) + "\n")
-                    nlines += 1
-
-        if isinstance(outfname, str):
-             pass
+    def app_to_file(self, outfold, style=0, **kwargs):
+        if style == 0:
+            finput = "in.lammps"
+            outfname4py_app = "application_py"
+            self.lines4py_app[1] = "infile = " + '"' + finput + '"' + "\n"
+        elif style == 1:
+            finput = "input.yaml"
+            outfname4py_app = "run_seakmc_p.py"
+        elif style == 2:
+            finput = "inputMMC.yaml"
+            outfname4py_app = "run_MMC.py"
         else:
-            outfname = infname
+            raise ValueError("style must be 0, 1 or 2")
 
-        with open(outfold + "/" + outfname, 'w') as f:
-            for line in lines:
-                f.write(line)
-
-    @staticmethod
-    def copy_files(fnames, outfold):
-        if isinstance(fnames, str):
-            fnames = [fnames]
-        for fname in fnames:
-            shutil.copy(Input_Path + "/" + fname, outfold + "/" + fname)
-
-
-    def app_to_file(self, outfold, outfname4py_app="run_seakmc_p.py"):
         with open(outfold + "/" + outfname4py_app, 'w') as f:
             for line in self.lines4py_app:
                 f.write(line)
         return outfname4py_app
+
