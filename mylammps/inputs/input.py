@@ -166,10 +166,6 @@ class SeakmcInputs:
         for fname in fnames:
             shutil.copy(Input_Path + "/" + fname, outfold + "/" + fname)
 
-    def to_file(self, outfold):
-        with open(outfold + "/" + "input.yaml", 'w') as f:
-            for line in self.lines:
-                f.write(line)
 
     def app_to_file(self, outfold, outfname4py_app="run_seakmc_p.py"):
         with open(outfold + "/" + outfname4py_app, 'w') as f:
